@@ -81,7 +81,7 @@ public:
     }
 
     [[nodiscard]] const iterator cend() {
-        return iterator(data_);
+        return end();
     }
 
     [[nodiscard]] T* data() const {

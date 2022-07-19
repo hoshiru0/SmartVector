@@ -1,6 +1,5 @@
 #pragma once
 #include <initializer_list>
-#include <iostream>
 #include <cstdint>
 #include <string.h>
 
@@ -82,7 +81,11 @@ public:
         capacity_ = other.capacity_;
         min_capacity_ = other.min_capacity_;
         data_ = other.data_;
-        other.reset();
+
+        other.data_ = 0;
+        other.size_ = 0;
+        other.capacity_ = 0;
+        other.min_capacity_ = MIN_CAP;
         return *this;
     }
 
@@ -209,13 +212,6 @@ public:
         for (uint32_t i{size_}; i>0; i--) {
             this->pop_back();
         }
-    }
-
-    void reset() {
-        data_ = 0;
-        size_ = 0;
-        capacity_ = 0;
-        min_capacity_ = MIN_CAP;
     }
 
     ~SmartVector() {

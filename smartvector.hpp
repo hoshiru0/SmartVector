@@ -4,16 +4,11 @@
 #include <cstdint>
 #include <string.h>
 
-
-#define MIN_CAP 64
-
 template<typename T, bool swap_remove = false, bool use_realloc = false>
 class SmartVector {
     uint32_t size_ {};
     uint32_t capacity_ {};
-    uint32_t min_capacity_ {};
     T* data_ {};
-
 
 public:
     using iterator_category = std::forward_iterator_tag;
@@ -56,8 +51,6 @@ public:
 
     SmartVector(std::initializer_list<T> l) {
         capacity_ = l.size();
-        capacity_ = capacity_ < MIN_CAP ? MIN_CAP : capacity_;
-        min_capacity_ = capacity_;
         realloc();
         for (auto& el : l) {
             push_back(el);
@@ -73,25 +66,22 @@ public:
     }
 
     SmartVector() {
-        min_capacity_ = MIN_CAP;
     }
 
     SmartVector& operator=(SmartVector&& other) {
-        this->~SmartVector();
+        clear();
         size_ = other.size_;
         capacity_ = other.capacity_;
-        min_capacity_ = other.min_capacity_;
         data_ = other.data_;
 
         other.data_ = 0;
         other.size_ = 0;
         other.capacity_ = 0;
-        other.min_capacity_ = MIN_CAP;
         return *this;
     }
 
     SmartVector& operator=(SmartVector& other) {
-        min_capacity_ = other.min_capacity_;
+        clear();
         capacity_ = other.capacity_;
         realloc();
         for (const auto& el : other) {
@@ -150,13 +140,12 @@ public:
     }
 
     void reserve(uint32_t n) {
-        min_capacity_ = n;
         capacity_ = n;
         realloc();
     }
 
-    void shrink() {
-        capacity_ = capacity_/2;
+    void shrink_to_fit() {
+        capacity_ = size_;
         realloc();
     }
 
@@ -174,15 +163,8 @@ public:
         return emplace_back(value);
     }
 
-    template<bool call_destr = true>
     void pop_back() {
-        if constexpr (call_destr) {
-            (*this)[size_-1].~T();
-        } 
-        size_--;
-        if (uint32_t c = (capacity_/4); capacity_ > min_capacity_ && size_ == c) {
-            shrink();
-        }
+        (*this)[--size_].~T();
     }
 
     template<typename... Ts>
@@ -211,12 +193,15 @@ public:
 
     void clear() {
         for (uint32_t i{size_}; i>0; i--) {
-            this->pop_back();
+            pop_back();
         }
+        size_ = 0;
+        capacity_ = 0;
+        free(data_);
+        data_ = 0;
     }
 
     ~SmartVector() {
         clear();
-        free(data_);
     }
 };
